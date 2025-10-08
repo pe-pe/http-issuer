@@ -27,7 +27,7 @@ import (
 	"math/big"
 	"time"
 
-	"http-issuer/api"
+	httpissuerv1alpha1 "http-issuer/api/v1alpha1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -52,8 +52,8 @@ type Signer struct{}
 
 func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	return (&controllers.CombinedController{
-		IssuerTypes:        []v1alpha1.Issuer{&api.HttpIssuer{}},
-		ClusterIssuerTypes: []v1alpha1.Issuer{&api.HttpClusterIssuer{}},
+		IssuerTypes:        []v1alpha1.Issuer{&httpissuerv1alpha1.HttpIssuer{}},
+		ClusterIssuerTypes: []v1alpha1.Issuer{&httpissuerv1alpha1.HttpClusterIssuer{}},
 
 		FieldOwner:       "httpissuer.ca.internal",
 		MaxRetryDuration: 1 * time.Minute,

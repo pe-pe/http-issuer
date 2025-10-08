@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"time"
 
-	"http-issuer/api"
+	httpissuerv1alpha1 "http-issuer/api/v1alpha1"
 	"http-issuer/controller"
 
 	"go.uber.org/zap"
@@ -144,7 +144,7 @@ func run(
 	}
 
 	scheme := runtime.NewScheme()
-	utilruntime.Must(api.AddToScheme(scheme))
+	utilruntime.Must(httpissuerv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 
 	options := ctrl.Options{

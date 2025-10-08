@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"http-issuer/api"
+	httpissuerv1alpha1 "http-issuer/api/v1alpha1"
 
 	cmutil "github.com/cert-manager/cert-manager/pkg/api/util"
 	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -61,7 +61,7 @@ func testClient(t *testing.T) client.WithWatch {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, cmapi.AddToScheme(scheme))
 	require.NoError(t, certificatesv1.AddToScheme(scheme))
-	require.NoError(t, api.AddToScheme(scheme))
+	require.NoError(t, httpissuerv1alpha1.AddToScheme(scheme))
 
 	controllerClient, err := client.NewWithWatch(kubeConfig, client.Options{Scheme: scheme})
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestHttpCertificate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	issuer := &api.HttpIssuer{
+	issuer := &httpissuerv1alpha1.HttpIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "issuer-test",
 			Namespace: namespace,
@@ -124,7 +124,7 @@ func TestHttpCertificateSigningRequest(t *testing.T) {
 
 	csrName := "test-" + rand.String(20)
 
-	clusterIssuer := &api.HttpClusterIssuer{
+	clusterIssuer := &httpissuerv1alpha1.HttpClusterIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-issuer-" + csrName,
 		},

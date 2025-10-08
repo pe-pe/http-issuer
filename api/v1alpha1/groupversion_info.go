@@ -17,7 +17,7 @@ limitations under the License.
 // Package internal contains API Schema definitions for the  internal API group
 // +kubebuilder:object:generate=true
 // +groupName=ca.internal
-package api
+package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +26,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "ca.internal", Version: "api"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "ca.internal", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
