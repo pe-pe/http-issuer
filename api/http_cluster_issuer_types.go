@@ -33,34 +33,34 @@ import (
 // +kubebuilder:printcolumn:name="Generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// SimpleClusterIssuer is the Schema for the SimpleClusterIssuers API
-type SimpleClusterIssuer struct {
+// HttpClusterIssuer is the Schema for the HttpClusterIssuers API
+type HttpClusterIssuer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SimpleCertificateSource `json:"spec,omitempty"`
+	Spec   HttpCertificateSource `json:"spec,omitempty"`
 	Status v1alpha1.IssuerStatus   `json:"status,omitempty"`
 }
 
-func (vi *SimpleClusterIssuer) GetConditions() []metav1.Condition {
+func (vi *HttpClusterIssuer) GetConditions() []metav1.Condition {
 	return vi.Status.Conditions
 }
 
-func (vi *SimpleClusterIssuer) GetIssuerTypeIdentifier() string {
-	return "simpleclusterissuers.ca.internal"
+func (vi *HttpClusterIssuer) GetIssuerTypeIdentifier() string {
+	return "httpclusterissuers.ca.internal"
 }
 
-var _ v1alpha1.Issuer = &SimpleClusterIssuer{}
+var _ v1alpha1.Issuer = &HttpClusterIssuer{}
 
 // +kubebuilder:object:root=true
 
-// SimpleClusterIssuerList contains a list of SimpleClusterIssuer
-type SimpleClusterIssuerList struct {
+// HttpClusterIssuerList contains a list of HttpClusterIssuer
+type HttpClusterIssuerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SimpleClusterIssuer `json:"items"`
+	Items           []HttpClusterIssuer `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SimpleClusterIssuer{}, &SimpleClusterIssuerList{})
+	SchemeBuilder.Register(&HttpClusterIssuer{}, &HttpClusterIssuerList{})
 }

@@ -1,4 +1,4 @@
-module simple-issuer
+module http-issuer
 
 go 1.24.0
 

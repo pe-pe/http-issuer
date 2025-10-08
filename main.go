@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"time"
 
-	"simple-issuer/api"
-	"simple-issuer/controller"
+	"http-issuer/api"
+	"http-issuer/controller"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

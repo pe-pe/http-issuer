@@ -16,4 +16,4 @@ limitations under the License.
 
 package api
 
-type SimpleCertificateSource struct{}
+type HttpCertificateSource struct{}

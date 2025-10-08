@@ -32,34 +32,34 @@ import (
 // +kubebuilder:printcolumn:name="Generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// SimpleIssuer is the Schema for the SimpleIssuers API
-type SimpleIssuer struct {
+// HttpIssuer is the Schema for the HttpIssuers API
+type HttpIssuer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SimpleCertificateSource `json:"spec,omitempty"`
+	Spec   HttpCertificateSource `json:"spec,omitempty"`
 	Status v1alpha1.IssuerStatus   `json:"status,omitempty"`
 }
 
-func (vi *SimpleIssuer) GetConditions() []metav1.Condition {
+func (vi *HttpIssuer) GetConditions() []metav1.Condition {
 	return vi.Status.Conditions
 }
 
-func (vi *SimpleIssuer) GetIssuerTypeIdentifier() string {
-	return "simpleissuers.ca.internal"
+func (vi *HttpIssuer) GetIssuerTypeIdentifier() string {
+	return "httpissuers.ca.internal"
 }
 
-var _ v1alpha1.Issuer = &SimpleIssuer{}
+var _ v1alpha1.Issuer = &HttpIssuer{}
 
 // +kubebuilder:object:root=true
 
-// SimpleIssuerList contains a list of SimpleIssuers
-type SimpleIssuerList struct {
+// HttpIssuerList contains a list of HttpIssuers
+type HttpIssuerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SimpleIssuer `json:"items"`
+	Items           []HttpIssuer `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&SimpleIssuer{}, &SimpleIssuerList{})
+	SchemeBuilder.Register(&HttpIssuer{}, &HttpIssuerList{})
 }

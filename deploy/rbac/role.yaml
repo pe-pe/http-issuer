@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: simple-issuer-controller-role
+  name: http-issuer-controller-role
 rules:
 - apiGroups:
   - cert-manager.io
@@ -35,8 +35,8 @@ rules:
 - apiGroups:
   - certificates.k8s.io
   resourceNames:
-  - simpleclusterissuers.ca.internal/*
-  - simpleissuers.ca.internal/*
+  - httpclusterissuers.ca.internal/*
+  - httpissuers.ca.internal/*
   resources:
   - signers
   verbs:
@@ -51,8 +51,8 @@ rules:
 - apiGroups:
   - ca.internal
   resources:
-  - simpleclusterissuers
-  - simpleissuers
+  - httpclusterissuers
+  - httpissuers
   verbs:
   - get
   - list
@@ -60,7 +60,7 @@ rules:
 - apiGroups:
   - ca.internal
   resources:
-  - simpleclusterissuers/status
-  - simpleissuers/status
+  - httpclusterissuers/status
+  - httpissuers/status
   verbs:
   - patch

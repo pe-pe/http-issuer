@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-  name: simpleissuers.ca.internal
+  name: httpissuers.ca.internal
 spec:
   group: ca.internal
   names:
-    kind: SimpleIssuer
-    listKind: SimpleIssuerList
-    plural: simpleissuers
-    singular: simpleissuer
+    kind: HttpIssuer
+    listKind: HttpIssuerList
+    plural: httpissuers
+    singular: httpissuer
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -39,7 +39,7 @@ spec:
     name: api
     schema:
       openAPIV3Schema:
-        description: SimpleIssuer is the Schema for the SimpleIssuers API
+        description: HttpIssuer is the Schema for the HttpIssuers API
         properties:
           apiVersion:
             description: |-

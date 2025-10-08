@@ -27,7 +27,7 @@ import (
 	"math/big"
 	"time"
 
-	"simple-issuer/api"
+	"http-issuer/api"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -41,10 +41,10 @@ import (
 
 // +kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch
 // +kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/status,verbs=patch
-// +kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=sign,resourceNames=simpleissuers.ca.internal/*;simpleclusterissuers.ca.internal/*
+// +kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=sign,resourceNames=httpissuers.ca.internal/*;httpclusterissuers.ca.internal/*
 
-// +kubebuilder:rbac:groups=ca.internal,resources=simpleissuers;simpleclusterissuers,verbs=get;list;watch
-// +kubebuilder:rbac:groups=ca.internal,resources=simpleissuers/status;simpleclusterissuers/status,verbs=patch
+// +kubebuilder:rbac:groups=ca.internal,resources=httpissuers;httpclusterissuers,verbs=get;list;watch
+// +kubebuilder:rbac:groups=ca.internal,resources=httpissuers/status;httpclusterissuers/status,verbs=patch
 
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
@@ -52,15 +52,15 @@ type Signer struct{}
 
 func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	return (&controllers.CombinedController{
-		IssuerTypes:        []v1alpha1.Issuer{&api.SimpleIssuer{}},
-		ClusterIssuerTypes: []v1alpha1.Issuer{&api.SimpleClusterIssuer{}},
+		IssuerTypes:        []v1alpha1.Issuer{&api.HttpIssuer{}},
+		ClusterIssuerTypes: []v1alpha1.Issuer{&api.HttpClusterIssuer{}},
 
-		FieldOwner:       "simpleissuer.ca.internal",
+		FieldOwner:       "httpissuer.ca.internal",
 		MaxRetryDuration: 1 * time.Minute,
 
 		Sign:          s.Sign,
 		Check:         s.Check,
-		EventRecorder: mgr.GetEventRecorderFor("simpleissuer.ca.internal"),
+		EventRecorder: mgr.GetEventRecorderFor("httpissuer.ca.internal"),
 	}).SetupWithManager(ctx, mgr)
 }
 

@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-  name: simpleclusterissuers.ca.internal
+  name: httpclusterissuers.ca.internal
 spec:
   group: ca.internal
   names:
-    kind: SimpleClusterIssuer
-    listKind: SimpleClusterIssuerList
-    plural: simpleclusterissuers
-    singular: simpleclusterissuer
+    kind: HttpClusterIssuer
+    listKind: HttpClusterIssuerList
+    plural: httpclusterissuers
+    singular: httpclusterissuer
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -39,7 +39,7 @@ spec:
     name: api
     schema:
       openAPIV3Schema:
-        description: SimpleClusterIssuer is the Schema for the SimpleClusterIssuers
+        description: HttpClusterIssuer is the Schema for the HttpClusterIssuers
           API
         properties:
           apiVersion:

@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"simple-issuer/api"
+	"http-issuer/api"
 
 	cmutil "github.com/cert-manager/cert-manager/pkg/api/util"
 	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -69,7 +69,7 @@ func testClient(t *testing.T) client.WithWatch {
 	return controllerClient
 }
 
-func TestSimpleCertificate(t *testing.T) {
+func TestHttpCertificate(t *testing.T) {
 	kubeClient := testClient(t)
 
 	namespace := "test-" + rand.String(20)
@@ -80,7 +80,7 @@ func TestSimpleCertificate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	issuer := &api.SimpleIssuer{
+	issuer := &api.HttpIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "issuer-test",
 			Namespace: namespace,
@@ -94,7 +94,7 @@ func TestSimpleCertificate(t *testing.T) {
 		cmgen.SetCertificateSecretName("aaaaaaaa"),
 		cmgen.SetCertificateIssuer(v1.ObjectReference{
 			Group: "ca.internal",
-			Kind:  "SimpleIssuer",
+			Kind:  "HttpIssuer",
 			Name:  issuer.Name,
 		}),
 	)
@@ -119,12 +119,12 @@ func TestSimpleCertificate(t *testing.T) {
 	}
 }
 
-func TestSimpleCertificateSigningRequest(t *testing.T) {
+func TestHttpCertificateSigningRequest(t *testing.T) {
 	kubeClient := testClient(t)
 
 	csrName := "test-" + rand.String(20)
 
-	clusterIssuer := &api.SimpleClusterIssuer{
+	clusterIssuer := &api.HttpClusterIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-issuer-" + csrName,
 		},
@@ -143,7 +143,7 @@ func TestSimpleCertificateSigningRequest(t *testing.T) {
 		cmgen.SetCertificateSigningRequestDuration("1h"),
 		cmgen.SetCertificateSigningRequestRequest(csrBlob),
 		cmgen.SetCertificateSigningRequestUsages([]certificatesv1.KeyUsage{certificatesv1.UsageDigitalSignature}),
-		cmgen.SetCertificateSigningRequestSignerName(fmt.Sprintf("simpleclusterissuers.ca.internal/%s", clusterIssuer.Name)),
+		cmgen.SetCertificateSigningRequestSignerName(fmt.Sprintf("httpclusterissuers.ca.internal/%s", clusterIssuer.Name)),
 	)
 
 	err = kubeClient.Create(t.Context(), clusterIssuer)
