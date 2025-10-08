@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"simple-issuer/api"
+
 	cmutil "github.com/cert-manager/cert-manager/pkg/api/util"
 	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	v1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -41,7 +43,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"simple-issuer/api"
 )
 
 func testClient(t *testing.T) client.WithWatch {
@@ -92,7 +93,7 @@ func TestSimpleCertificate(t *testing.T) {
 		cmgen.SetCertificateCommonName("test.com"),
 		cmgen.SetCertificateSecretName("aaaaaaaa"),
 		cmgen.SetCertificateIssuer(v1.ObjectReference{
-			Group: "testing.cert-manager.io",
+			Group: "ca.internal",
 			Kind:  "SimpleIssuer",
 			Name:  issuer.Name,
 		}),
@@ -142,7 +143,7 @@ func TestSimpleCertificateSigningRequest(t *testing.T) {
 		cmgen.SetCertificateSigningRequestDuration("1h"),
 		cmgen.SetCertificateSigningRequestRequest(csrBlob),
 		cmgen.SetCertificateSigningRequestUsages([]certificatesv1.KeyUsage{certificatesv1.UsageDigitalSignature}),
-		cmgen.SetCertificateSigningRequestSignerName(fmt.Sprintf("simpleclusterissuers.testing.cert-manager.io/%s", clusterIssuer.Name)),
+		cmgen.SetCertificateSigningRequestSignerName(fmt.Sprintf("simpleclusterissuers.ca.internal/%s", clusterIssuer.Name)),
 	)
 
 	err = kubeClient.Create(t.Context(), clusterIssuer)

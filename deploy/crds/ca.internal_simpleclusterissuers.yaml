@@ -4,15 +4,15 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-  name: simpleissuers.testing.cert-manager.io
+  name: simpleclusterissuers.ca.internal
 spec:
-  group: testing.cert-manager.io
+  group: ca.internal
   names:
-    kind: SimpleIssuer
-    listKind: SimpleIssuerList
-    plural: simpleissuers
-    singular: simpleissuer
-  scope: Namespaced
+    kind: SimpleClusterIssuer
+    listKind: SimpleClusterIssuerList
+    plural: simpleclusterissuers
+    singular: simpleclusterissuer
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
@@ -39,7 +39,8 @@ spec:
     name: api
     schema:
       openAPIV3Schema:
-        description: SimpleIssuer is the Schema for the SimpleIssuers API
+        description: SimpleClusterIssuer is the Schema for the SimpleClusterIssuers
+          API
         properties:
           apiVersion:
             description: |-

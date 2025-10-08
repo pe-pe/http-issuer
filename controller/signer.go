@@ -27,8 +27,9 @@ import (
 	"math/big"
 	"time"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"simple-issuer/api"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/cert-manager/issuer-lib/api/v1alpha1"
 	"github.com/cert-manager/issuer-lib/controllers"
@@ -40,10 +41,10 @@ import (
 
 // +kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch
 // +kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/status,verbs=patch
-// +kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=sign,resourceNames=simpleissuers.testing.cert-manager.io/*;simpleclusterissuers.testing.cert-manager.io/*
+// +kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=sign,resourceNames=simpleissuers.ca.internal/*;simpleclusterissuers.ca.internal/*
 
-// +kubebuilder:rbac:groups=testing.cert-manager.io,resources=simpleissuers;simpleclusterissuers,verbs=get;list;watch
-// +kubebuilder:rbac:groups=testing.cert-manager.io,resources=simpleissuers/status;simpleclusterissuers/status,verbs=patch
+// +kubebuilder:rbac:groups=ca.internal,resources=simpleissuers;simpleclusterissuers,verbs=get;list;watch
+// +kubebuilder:rbac:groups=ca.internal,resources=simpleissuers/status;simpleclusterissuers/status,verbs=patch
 
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
@@ -54,12 +55,12 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 		IssuerTypes:        []v1alpha1.Issuer{&api.SimpleIssuer{}},
 		ClusterIssuerTypes: []v1alpha1.Issuer{&api.SimpleClusterIssuer{}},
 
-		FieldOwner:       "simpleissuer.testing.cert-manager.io",
+		FieldOwner:       "simpleissuer.ca.internal",
 		MaxRetryDuration: 1 * time.Minute,
 
 		Sign:          s.Sign,
 		Check:         s.Check,
-		EventRecorder: mgr.GetEventRecorderFor("simpleissuer.testing.cert-manager.io"),
+		EventRecorder: mgr.GetEventRecorderFor("simpleissuer.ca.internal"),
 	}).SetupWithManager(ctx, mgr)
 }
 

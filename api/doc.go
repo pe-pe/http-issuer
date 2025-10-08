@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package internal contains API Schema definitions for the  internal API group
 // +kubebuilder:object:generate=true
-// +groupName=testing.cert-manager.io
+// +groupName=ca.internal
 package api
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "testing.cert-manager.io", Version: "api"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "ca.internal", Version: "api"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

@@ -46,7 +46,7 @@ func (vi *SimpleIssuer) GetConditions() []metav1.Condition {
 }
 
 func (vi *SimpleIssuer) GetIssuerTypeIdentifier() string {
-	return "simpleissuers.testing.cert-manager.io"
+	return "simpleissuers.ca.internal"
 }
 
 var _ v1alpha1.Issuer = &SimpleIssuer{}

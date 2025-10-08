@@ -35,8 +35,8 @@ rules:
 - apiGroups:
   - certificates.k8s.io
   resourceNames:
-  - simpleclusterissuers.testing.cert-manager.io/*
-  - simpleissuers.testing.cert-manager.io/*
+  - simpleclusterissuers.ca.internal/*
+  - simpleissuers.ca.internal/*
   resources:
   - signers
   verbs:
@@ -49,7 +49,7 @@ rules:
   - create
   - patch
 - apiGroups:
-  - testing.cert-manager.io
+  - ca.internal
   resources:
   - simpleclusterissuers
   - simpleissuers
@@ -58,7 +58,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - testing.cert-manager.io
+  - ca.internal
   resources:
   - simpleclusterissuers/status
   - simpleissuers/status

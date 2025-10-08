@@ -47,7 +47,7 @@ func (vi *SimpleClusterIssuer) GetConditions() []metav1.Condition {
 }
 
 func (vi *SimpleClusterIssuer) GetIssuerTypeIdentifier() string {
-	return "simpleclusterissuers.testing.cert-manager.io"
+	return "simpleclusterissuers.ca.internal"
 }
 
 var _ v1alpha1.Issuer = &SimpleClusterIssuer{}
