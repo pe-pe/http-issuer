@@ -2,4 +2,5 @@ resources:
 - 01_namespace.yaml
 - 02_rbac.yaml
 - 03_rbac_leaderelection.yaml
+- 03_rbac_cm_approver.yaml
 - 04_deployment.yaml
