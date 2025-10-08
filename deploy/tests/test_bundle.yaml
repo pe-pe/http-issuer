@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: http-issuer-test
+---
+apiVersion: ca.internal/v1alpha1
+kind: HttpIssuer
+metadata:
+  name: http-issuer-sample
+  namespace: http-issuer-test
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: http-issuer-sample-cert
+  namespace: http-issuer-test
+spec:
+  secretName: http-issuer-sample-cert-tls
+  duration: 1h
+  renewBefore: 50m
+  commonName: example.com
+  dnsNames:
+  - example.com
+  - www.example.com
+  issuerRef:
+    group: ca.internal
+    kind: HttpIssuer
+    name: http-issuer-sample
