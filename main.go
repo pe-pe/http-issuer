@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -144,6 +145,7 @@ func run(
 	}
 
 	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(httpissuerv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 
@@ -179,7 +181,9 @@ func run(
 		return fmt.Errorf("unable to start manager: %w", err)
 	}
 
-	if err = (&controller.Signer{}).SetupWithManager(ctx, mgr); err != nil {
+	if err = (&controller.Signer{
+		KubeClient: mgr.GetClient(),
+	}).SetupWithManager(ctx, mgr); err != nil {
 		return fmt.Errorf("unable to create controller: %w", err)
 	}
 	// +kubebuilder:scaffold:builder

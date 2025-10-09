@@ -60,7 +60,38 @@ spec:
           metadata:
             type: object
           spec:
+            description: |-
+              Specification of desired state of HttpIssuer
             type: object
+            properties:
+              basicAuthSecretRef:
+                description: BasicAuthSecretRef is a reference to a secret that contains
+                  the username and password for basic authentication.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              tokenSecretRef:
+                description: TokenSecretRef is a reference to a secret that contains
+                  the bearer token for authentication.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
           status:
             properties:
               conditions:

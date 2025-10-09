@@ -64,3 +64,10 @@ rules:
   - httpissuers/status
   verbs:
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+  - watch

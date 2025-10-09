@@ -3,11 +3,43 @@ kind: Namespace
 metadata:
   name: http-issuer-test
 ---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/basic-auth
+data:
+  username: bXl1c2Vy    # base64 encoded myuser
+  password: bXlwYXNzd29yZA==    # base64 encoded mypassword
+metadata:
+  name: http-issuer-secret
+  namespace: http-issuer-test
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/basic-auth
+data:
+  username: bXl1c2Vy    # base64 encoded myuser
+  password: bXlwYXNzd29yZA==    # base64 encoded mypassword
+metadata:
+  name: http-cluster-issuer-secret
+  namespace: http-issuer-test
+---
 apiVersion: ca.internal/v1alpha1
 kind: HttpIssuer
 metadata:
   name: http-issuer-sample
   namespace: http-issuer-test
+spec:
+  basicAuthSecretRef:
+    name: http-issuer-secret
+---
+apiVersion: ca.internal/v1alpha1
+kind: HttpClusterIssuer
+metadata:
+  name: http-cluster-issuer-sample
+spec:
+  basicAuthSecretRef:
+    name: http-cluster-issuer-secret
+    namespace: http-issuer-test
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -26,3 +58,21 @@ spec:
     group: ca.internal
     kind: HttpIssuer
     name: http-issuer-sample
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: http-cluster-issuer-sample-cert
+  namespace: http-issuer-test
+spec:
+  secretName: http-cluster-issuer-sample-cert-tls
+  duration: 1h
+  renewBefore: 50m
+  commonName: cluster.example.com
+  dnsNames:
+  - cluster.example.com
+  - www.cluster.example.com
+  issuerRef:
+    group: ca.internal
+    kind: HttpClusterIssuer
+    name: http-cluster-issuer-sample

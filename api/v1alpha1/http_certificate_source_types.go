@@ -16,4 +16,20 @@ limitations under the License.
 
 package v1alpha1
 
-type HttpCertificateSource struct{}
+type HttpCertificateSource struct{
+    // Only one of the fields below should be set
+    // Name of the secret holding 'username' and 'password' keys for basic auth
+    // +optional
+    BasicAuthSecretRef *SecretSelector `json:"basicAuthSecretRef,omitempty"`
+    // Name of the secret holding the token for bearer auth
+    // +optional
+    TokenSecretRef *SecretSelector `json:"tokenSecretRef,omitempty"`
+}
+
+type SecretSelector struct {
+    // Name of the secret
+    Name string `json:"name"`
+    // Namespace of the secret, defaults to the issuer namespace
+    // +optional
+    Namespace *string `json:"namespace,omitempty"`
+}
