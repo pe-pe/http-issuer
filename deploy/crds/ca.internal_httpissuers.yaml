@@ -63,6 +63,31 @@ spec:
               Specification of desired state of HttpIssuer
             type: object
             properties:
+              url:
+                description: URL to check or fetch the certificate from
+                type: string
+              healthPath:
+                description: HealthPath is the HTTP path to use for health checks, defaults to "/healthz"
+                type: string
+                default: "/healthz"
+              signPath:
+                description: SignPath is the HTTP path to use for signing requests
+                type: string
+              signMethod:
+                description: SignMethod is the HTTP method to use for signing requests, defaults to "POST"
+                type: string
+                default: "POST"
+              csrParameter:
+                description: CSRParameter is the name of the parameter to use for the
+                  certificate signing request, defaults to "CSR"
+                type: string
+                default: "CSR"
+              httpTimeout:
+                description: HttpTimeout is the timeout for HTTP requests in seconds, defaults to "30"
+                type: integer
+                minimum: 1
+                maximum: 3600
+                default: 30
               basicAuthSecretRef:
                 description: BasicAuthSecretRef is a reference to a secret that contains
                   the username and password for basic authentication.
@@ -83,6 +108,9 @@ spec:
                 required:
                 - name
                 type: object
+            required:
+            - url
+            - signPath
           status:
             properties:
               conditions:

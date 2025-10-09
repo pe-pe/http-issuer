@@ -79,22 +79,26 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	}).SetupWithManager(ctx, mgr)
 }
 
-func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Issuer) (*HttpCredentials, error) {
-	// Determine the issuer type and extract spec + namespace if HttpIssuer
-	// For HttpClusterIssuer, namespace will be set from *secretRef (mandatory in API definition)
-	var spec *httpissuerv1alpha1.HttpCertificateSource
-	var secretNamespace *string
-	httpCredentials := &HttpCredentials{}
-
+func getHttpIssuerSpec(issuerObject v1alpha1.Issuer) (*httpissuerv1alpha1.HttpCertificateSource, error) {
 	switch issuer := issuerObject.(type) {
 	case *httpissuerv1alpha1.HttpIssuer:
-		spec = &issuer.Spec
-		secretNamespace = &issuer.Namespace
+		return &issuer.Spec, nil
 	case *httpissuerv1alpha1.HttpClusterIssuer:
-		spec = &issuer.Spec
+		return &issuer.Spec, nil
 	default:
 		return nil, fmt.Errorf("expected HttpIssuer or HttpClusterIssuer, got %T", issuerObject)
 	}
+}
+
+func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Issuer) (*HttpCredentials, error) {
+	// Get issuerObject.Spec
+	spec, err := getHttpIssuerSpec(issuerObject)
+	if err != nil {
+		return nil, err
+	}
+	// For HttpClusterIssuer, namespace will be set from *secretRef (mandatory in API definition)
+	secretNamespace := issuerObject.GetNamespace()
+	httpCredentials := &HttpCredentials{}
 
 	if spec.BasicAuthSecretRef != nil && spec.TokenSecretRef != nil {
 		return nil, fmt.Errorf("only one of basicAuthSecretRef or tokenSecretRef can be set")
@@ -102,44 +106,44 @@ func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Is
 	if spec.BasicAuthSecretRef != nil {
 		httpCredentials.Type = "basic-auth"
 		httpCredentials.Name = spec.BasicAuthSecretRef.Name
-		if secretNamespace == nil {
-			secretNamespace = spec.BasicAuthSecretRef.Namespace
+		if secretNamespace == "" {  // HttpClusterIssuer case
+			secretNamespace = *spec.BasicAuthSecretRef.Namespace
 		}
 	} else if spec.TokenSecretRef != nil {
 		httpCredentials.Type = "token"
 		httpCredentials.Name = spec.TokenSecretRef.Name
-		if secretNamespace == nil {
-			secretNamespace = spec.TokenSecretRef.Namespace
+		if secretNamespace == "" {  // HttpClusterIssuer case
+			secretNamespace = *spec.TokenSecretRef.Namespace
 		}
 	} else {
 		return nil, fmt.Errorf("one of basicAuthSecretRef or tokenSecretRef must be set")
 	}
 
 	var secret corev1.Secret
-	err := s.KubeClient.Get(ctx, types.NamespacedName{
+	err = s.KubeClient.Get(ctx, types.NamespacedName{
 		Name:      httpCredentials.Name,
-		Namespace: *secretNamespace,
+		Namespace: secretNamespace,
 	}, &secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get secret %s/%s: %w", *secretNamespace, httpCredentials.Name, err)
+		return nil, fmt.Errorf("failed to get secret %s/%s: %w", secretNamespace, httpCredentials.Name, err)
 	}
 
 	switch httpCredentials.Type {
 		case "basic-auth":
 			username, ok := secret.Data["username"]
 			if !ok {
-				return nil, fmt.Errorf("failed to get username from secret %s/%s", *secretNamespace, httpCredentials.Name)
+				return nil, fmt.Errorf("failed to get username from secret %s/%s", secretNamespace, httpCredentials.Name)
 			}
 			password, ok := secret.Data["password"]
 			if !ok {
-				return nil, fmt.Errorf("failed to get password from secret %s/%s", *secretNamespace, httpCredentials.Name)
+				return nil, fmt.Errorf("failed to get password from secret %s/%s", secretNamespace, httpCredentials.Name)
 			}
 			httpCredentials.Username = string(username)
 			httpCredentials.Password = string(password)
 		case "token":
 			token, ok := secret.Data["token"]
 			if !ok {
-				return nil, fmt.Errorf("failed to get token from secret %s/%s", *secretNamespace, httpCredentials.Name)
+				return nil, fmt.Errorf("failed to get token from secret %s/%s", secretNamespace, httpCredentials.Name)
 			}
 			httpCredentials.Token = string(token)
 	}
@@ -147,21 +151,35 @@ func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Is
 }
 
 func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
+	ctrl.LoggerFrom(ctx).Info("Health check started for issuer")
+
+	spec, err := getHttpIssuerSpec(issuerObject)
+	if err != nil {
+		return err
+	}
 	httpCredentials, err := s.getHttpCredentials(ctx, issuerObject)
 	if err != nil {
 		return err
 	}
-	ctrl.LoggerFrom(ctx).Info("Health check started for issuer", "httpCredentials", httpCredentials)
+
+	ctrl.LoggerFrom(ctx).Info("Health check completed for issuer", "spec", spec, "httpCredentials", httpCredentials)
 
 	return nil
 }
 
 func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, issuerObject v1alpha1.Issuer) (signer.PEMBundle, error) {
+	ctrl.LoggerFrom(ctx).Info("Sign started for issuer")
+
+	spec, err := getHttpIssuerSpec(issuerObject)
+	if err != nil {
+		return signer.PEMBundle{}, err
+	}
 	httpCredentials, err := s.getHttpCredentials(ctx, issuerObject)
 	if err != nil {
 		return signer.PEMBundle{}, err
 	}
-	ctrl.LoggerFrom(ctx).Info("Sign started for issuer", "httpCredentials", httpCredentials)
+
+	ctrl.LoggerFrom(ctx).Info("Sign data obtained", "spec", spec, "httpCredentials", httpCredentials)
 
 	// generate random ca private key
 	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)

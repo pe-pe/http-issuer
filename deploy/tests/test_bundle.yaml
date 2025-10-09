@@ -29,6 +29,8 @@ metadata:
   name: http-issuer-sample
   namespace: http-issuer-test
 spec:
+  url: http://host.containers.internal:8080
+  signPath: /api/request_cert
   basicAuthSecretRef:
     name: http-issuer-secret
 ---
@@ -37,6 +39,8 @@ kind: HttpClusterIssuer
 metadata:
   name: http-cluster-issuer-sample
 spec:
+  url: http://host.containers.internal:8080
+  signPath: /api/request_cert
   basicAuthSecretRef:
     name: http-cluster-issuer-secret
     namespace: http-issuer-test
