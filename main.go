@@ -205,7 +205,7 @@ func run(
 
 var errNotInCluster = errors.New("not running in-cluster")
 
-// Copied from controller-runtime/pkg/leaderelection
+// Copied from controller-runtime/pkg/leaderelection.
 func getInClusterNamespace(clusterResourceNamespace *string) error {
 	if *clusterResourceNamespace != "" {
 		return nil

@@ -33,7 +33,7 @@ import (
 // +kubebuilder:printcolumn:name="Generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// HttpClusterIssuer is the Schema for the HttpClusterIssuers API
+// HttpClusterIssuer is the Schema for the HttpClusterIssuers API.
 type HttpClusterIssuer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,11 +54,12 @@ var _ v1alpha1.Issuer = &HttpClusterIssuer{}
 
 // +kubebuilder:object:root=true
 
-// HttpClusterIssuerList contains a list of HttpClusterIssuer
+// HttpClusterIssuerList contains a list of HttpClusterIssuer.
 type HttpClusterIssuerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HttpClusterIssuer `json:"items"`
+
+	Items []HttpClusterIssuer `json:"items"`
 }
 
 func init() {

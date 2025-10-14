@@ -32,7 +32,7 @@ import (
 // +kubebuilder:printcolumn:name="Generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// HttpIssuer is the Schema for the HttpIssuers API
+// HttpIssuer is the Schema for the HttpIssuers API.
 type HttpIssuer struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -53,11 +53,12 @@ var _ v1alpha1.Issuer = &HttpIssuer{}
 
 // +kubebuilder:object:root=true
 
-// HttpIssuerList contains a list of HttpIssuers
+// HttpIssuerList contains a list of HttpIssuers.
 type HttpIssuerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HttpIssuer `json:"items"`
+
+	Items []HttpIssuer `json:"items"`
 }
 
 func init() {

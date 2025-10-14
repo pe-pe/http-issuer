@@ -38,6 +38,11 @@ import (
 	"github.com/cert-manager/issuer-lib/controllers/signer"
 )
 
+const (
+	AuthTypeBasicAuth = "basic-auth"
+	AuthTypeToken     = "token"
+)
+
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificaterequests,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificaterequests/status,verbs=patch
 
@@ -88,66 +93,6 @@ func getHttpIssuerSpec(issuerObject v1alpha1.Issuer) (*httpissuerv1alpha1.HttpCe
 	}
 }
 
-func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Issuer) (*HttpCredentials, error) {
-	// Get issuerObject.Spec
-	spec, err := getHttpIssuerSpec(issuerObject)
-	if err != nil {
-		return nil, err
-	}
-	// For HttpClusterIssuer, namespace will be set from *secretRef (mandatory in API definition)
-	secretNamespace := issuerObject.GetNamespace()
-	httpCredentials := &HttpCredentials{}
-
-	if spec.BasicAuthSecretRef != nil && spec.TokenSecretRef != nil {
-		return nil, fmt.Errorf("only one of basicAuthSecretRef or tokenSecretRef can be set")
-	}
-	if spec.BasicAuthSecretRef != nil {
-		httpCredentials.Type = "basic-auth"
-		httpCredentials.Name = spec.BasicAuthSecretRef.Name
-		if secretNamespace == "" { // HttpClusterIssuer case
-			secretNamespace = *spec.BasicAuthSecretRef.Namespace
-		}
-	} else if spec.TokenSecretRef != nil {
-		httpCredentials.Type = "token"
-		httpCredentials.Name = spec.TokenSecretRef.Name
-		if secretNamespace == "" { // HttpClusterIssuer case
-			secretNamespace = *spec.TokenSecretRef.Namespace
-		}
-	} else {
-		return nil, fmt.Errorf("one of basicAuthSecretRef or tokenSecretRef must be set")
-	}
-
-	var secret corev1.Secret
-	err = s.KubeClient.Get(ctx, types.NamespacedName{
-		Name:      httpCredentials.Name,
-		Namespace: secretNamespace,
-	}, &secret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get secret %s/%s: %w", secretNamespace, httpCredentials.Name, err)
-	}
-
-	switch httpCredentials.Type {
-	case "basic-auth":
-		username, ok := secret.Data["username"]
-		if !ok {
-			return nil, fmt.Errorf("failed to get username from secret %s/%s", secretNamespace, httpCredentials.Name)
-		}
-		password, ok := secret.Data["password"]
-		if !ok {
-			return nil, fmt.Errorf("failed to get password from secret %s/%s", secretNamespace, httpCredentials.Name)
-		}
-		httpCredentials.Username = string(username)
-		httpCredentials.Password = string(password)
-	case "token":
-		token, ok := secret.Data["token"]
-		if !ok {
-			return nil, fmt.Errorf("failed to get token from secret %s/%s", secretNamespace, httpCredentials.Name)
-		}
-		httpCredentials.Token = string(token)
-	}
-	return httpCredentials, nil
-}
-
 func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
 	ctrl.LoggerFrom(ctx).Info("Health check started for issuer")
 
@@ -161,20 +106,20 @@ func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
 	}
 
 	// Create HTTP client and make authenticated request with defined timeout
-	client := &http.Client{
+	httpClient := &http.Client{
 		Timeout: time.Duration(spec.HttpTimeout) * time.Second,
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", spec.URL+spec.HealthPath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, spec.URL+spec.HealthPath, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	switch httpCredentials.Type {
-	case "basic-auth":
+	case AuthTypeBasicAuth:
 		req.SetBasicAuth(httpCredentials.Username, httpCredentials.Password)
-	case "token":
+	case AuthTypeToken:
 		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
 	}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.HealthPath, err)
 	}
@@ -189,6 +134,7 @@ func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
 	}
 
 	ctrl.LoggerFrom(ctx).Info("Health check completed for issuer")
+
 	return nil
 }
 
@@ -197,15 +143,15 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 
 	spec, err := getHttpIssuerSpec(issuerObject)
 	if err != nil {
-		return signer.PEMBundle{}, err
+		return signer.PEMBundle{}, fmt.Errorf("failed to get issuer spec: %w", err)
 	}
 	httpCredentials, err := s.getHttpCredentials(ctx, issuerObject)
 	if err != nil {
-		return signer.PEMBundle{}, err
+		return signer.PEMBundle{}, fmt.Errorf("failed to get HTTP credentials: %w", err)
 	}
 	certDetails, err := cr.GetCertificateDetails()
 	if err != nil {
-		return signer.PEMBundle{}, err
+		return signer.PEMBundle{}, fmt.Errorf("failed to get certificate details: %w", err)
 	}
 	requestAnnotations := cr.GetAnnotations()
 
@@ -224,11 +170,11 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 	}
 	requestBody, err := json.Marshal(data)
 	if err != nil {
-		return signer.PEMBundle{}, err
+		return signer.PEMBundle{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	// Create HTTP client and make authenticated request with defined timeout
-	client := &http.Client{
+	httpClient := &http.Client{
 		Timeout: time.Duration(spec.HttpTimeout) * time.Second,
 	}
 	req, err := http.NewRequestWithContext(ctx, spec.SignMethod, spec.URL+spec.SignPath, bytes.NewReader(requestBody))
@@ -236,13 +182,13 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 		return signer.PEMBundle{}, fmt.Errorf("failed to create request: %w", err)
 	}
 	switch httpCredentials.Type {
-	case "basic-auth":
+	case AuthTypeBasicAuth:
 		req.SetBasicAuth(httpCredentials.Username, httpCredentials.Password)
-	case "token":
+	case AuthTypeToken:
 		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return signer.PEMBundle{}, fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.SignPath, err)
 	}
@@ -267,4 +213,65 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 	return signer.PEMBundle{
 		ChainPEM: bodyBytes,
 	}, nil
+}
+
+func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Issuer) (*HttpCredentials, error) {
+	// Get issuerObject.Spec
+	spec, err := getHttpIssuerSpec(issuerObject)
+	if err != nil {
+		return nil, err
+	}
+	// For HttpClusterIssuer, namespace will be set from *secretRef (mandatory in API definition)
+	secretNamespace := issuerObject.GetNamespace()
+	httpCredentials := &HttpCredentials{}
+
+	if spec.BasicAuthSecretRef != nil && spec.TokenSecretRef != nil {
+		return nil, fmt.Errorf("only one of basicAuthSecretRef or tokenSecretRef can be set")
+	}
+	if spec.BasicAuthSecretRef != nil {
+		httpCredentials.Type = AuthTypeBasicAuth
+		httpCredentials.Name = spec.BasicAuthSecretRef.Name
+		if secretNamespace == "" { // HttpClusterIssuer case
+			secretNamespace = *spec.BasicAuthSecretRef.Namespace
+		}
+	} else if spec.TokenSecretRef != nil {
+		httpCredentials.Type = AuthTypeToken
+		httpCredentials.Name = spec.TokenSecretRef.Name
+		if secretNamespace == "" { // HttpClusterIssuer case
+			secretNamespace = *spec.TokenSecretRef.Namespace
+		}
+	} else {
+		return nil, fmt.Errorf("one of basicAuthSecretRef or tokenSecretRef must be set")
+	}
+
+	var secret corev1.Secret
+	err = s.KubeClient.Get(ctx, types.NamespacedName{
+		Name:      httpCredentials.Name,
+		Namespace: secretNamespace,
+	}, &secret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secret %s/%s: %w", secretNamespace, httpCredentials.Name, err)
+	}
+
+	switch httpCredentials.Type {
+	case AuthTypeBasicAuth:
+		username, ok := secret.Data["username"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get username from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		password, ok := secret.Data["password"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get password from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		httpCredentials.Username = string(username)
+		httpCredentials.Password = string(password)
+	case AuthTypeToken:
+		token, ok := secret.Data["token"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get token from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		httpCredentials.Token = string(token)
+	}
+
+	return httpCredentials, nil
 }
