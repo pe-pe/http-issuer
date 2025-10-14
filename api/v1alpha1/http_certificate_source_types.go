@@ -29,10 +29,14 @@ type HttpCertificateSource struct{
     // +optional
     // +kubebuilder:default="POST"
     SignMethod string `json:"signMethod"`
-    // CSRParameter is the name of the parameter to use for the certificate signing request, defaults to "CSR"
+    // CSRField is the name of the parameter to use for the certificate signing request, defaults to "CSR"
     // +optional
     // +kubebuilder:default="CSR"
-    CSRParameter string `json:"csrParameter"`
+    CSRField string `json:"csrField"`
+    // DurationField is the name of the parameter to use for the certificate duration,
+    // if empty, duration will not be sent to the server
+    // +optional
+    DurationField *string `json:"durationField,omitempty"`
     // HttpTimeout is the timeout for HTTP requests in seconds, defaults to "5"
     // +optional
     // +kubebuilder:default="5"
