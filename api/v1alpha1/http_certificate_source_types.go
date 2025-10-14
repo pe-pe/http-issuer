@@ -16,44 +16,44 @@ limitations under the License.
 
 package v1alpha1
 
-type HttpCertificateSource struct{
-    // URL to check or fetch the certificate from
-    URL string `json:"url"`
-    // HealthPath is the HTTP path to use for health checks, defaults to "/healthz"
-    // +optional
-    // +kubebuilder:default="/healthz"
-    HealthPath string `json:"healthPath"`
-    // SignPath is the HTTP path to use for signing requests, mandatory
-    SignPath string `json:"signPath"`
-    // SignMethod is the HTTP method to use for signing requests, defaults to "POST"
-    // +optional
-    // +kubebuilder:default="POST"
-    SignMethod string `json:"signMethod"`
-    // CSRField is the name of the parameter to use for the certificate signing request, defaults to "CSR"
-    // +optional
-    // +kubebuilder:default="CSR"
-    CSRField string `json:"csrField"`
-    // DurationField is the name of the parameter to use for the certificate duration,
-    // if empty, duration will not be sent to the server
-    // +optional
-    DurationField *string `json:"durationField,omitempty"`
-    // HttpTimeout is the timeout for HTTP requests in seconds, defaults to "5"
-    // +optional
-    // +kubebuilder:default="5"
-    HttpTimeout int `json:"httpTimeout"`
-    // Only one of the fields below should be set
-    // Name of the secret holding 'username' and 'password' keys for basic auth
-    // +optional
-    BasicAuthSecretRef *SecretSelector `json:"basicAuthSecretRef,omitempty"`
-    // Name of the secret holding the token for bearer auth
-    // +optional
-    TokenSecretRef *SecretSelector `json:"tokenSecretRef,omitempty"`
+type HttpCertificateSource struct {
+	// URL to check or fetch the certificate from
+	URL string `json:"url"`
+	// HealthPath is the HTTP path to use for health checks, defaults to "/healthz"
+	// +optional
+	// +kubebuilder:default="/healthz"
+	HealthPath string `json:"healthPath"`
+	// SignPath is the HTTP path to use for signing requests, mandatory
+	SignPath string `json:"signPath"`
+	// SignMethod is the HTTP method to use for signing requests, defaults to "POST"
+	// +optional
+	// +kubebuilder:default="POST"
+	SignMethod string `json:"signMethod"`
+	// CSRField is the name of the parameter to use for the certificate signing request, defaults to "CSR"
+	// +optional
+	// +kubebuilder:default="CSR"
+	CSRField string `json:"csrField"`
+	// DurationField is the name of the parameter to use for the certificate duration,
+	// if empty, duration will not be sent to the server
+	// +optional
+	DurationField *string `json:"durationField,omitempty"`
+	// HttpTimeout is the timeout for HTTP requests in seconds, defaults to "5"
+	// +optional
+	// +kubebuilder:default="5"
+	HttpTimeout int `json:"httpTimeout"`
+	// Only one of the fields below should be set
+	// Name of the secret holding 'username' and 'password' keys for basic auth
+	// +optional
+	BasicAuthSecretRef *SecretSelector `json:"basicAuthSecretRef,omitempty"`
+	// Name of the secret holding the token for bearer auth
+	// +optional
+	TokenSecretRef *SecretSelector `json:"tokenSecretRef,omitempty"`
 }
 
 type SecretSelector struct {
-    // Name of the secret
-    Name string `json:"name"`
-    // Namespace of the secret, defaults to the issuer namespace
-    // +optional
-    Namespace *string `json:"namespace,omitempty"`
+	// Name of the secret
+	Name string `json:"name"`
+	// Namespace of the secret, defaults to the issuer namespace
+	// +optional
+	Namespace *string `json:"namespace,omitempty"`
 }

@@ -39,7 +39,7 @@ type HttpClusterIssuer struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   HttpCertificateSource `json:"spec,omitempty"`
-	Status v1alpha1.IssuerStatus   `json:"status,omitempty"`
+	Status v1alpha1.IssuerStatus `json:"status,omitempty"`
 }
 
 func (vi *HttpClusterIssuer) GetConditions() []metav1.Condition {

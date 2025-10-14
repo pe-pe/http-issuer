@@ -53,13 +53,13 @@ import (
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=list;watch
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
-type Signer struct{
+type Signer struct {
 	KubeClient client.Client
 }
 
 type HttpCredentials struct {
 	Type     string
-	Name	 string
+	Name     string
 	Username string
 	Password string
 	Token    string
@@ -106,13 +106,13 @@ func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Is
 	if spec.BasicAuthSecretRef != nil {
 		httpCredentials.Type = "basic-auth"
 		httpCredentials.Name = spec.BasicAuthSecretRef.Name
-		if secretNamespace == "" {  // HttpClusterIssuer case
+		if secretNamespace == "" { // HttpClusterIssuer case
 			secretNamespace = *spec.BasicAuthSecretRef.Namespace
 		}
 	} else if spec.TokenSecretRef != nil {
 		httpCredentials.Type = "token"
 		httpCredentials.Name = spec.TokenSecretRef.Name
-		if secretNamespace == "" {  // HttpClusterIssuer case
+		if secretNamespace == "" { // HttpClusterIssuer case
 			secretNamespace = *spec.TokenSecretRef.Namespace
 		}
 	} else {
@@ -129,23 +129,23 @@ func (s Signer) getHttpCredentials(ctx context.Context, issuerObject v1alpha1.Is
 	}
 
 	switch httpCredentials.Type {
-		case "basic-auth":
-			username, ok := secret.Data["username"]
-			if !ok {
-				return nil, fmt.Errorf("failed to get username from secret %s/%s", secretNamespace, httpCredentials.Name)
-			}
-			password, ok := secret.Data["password"]
-			if !ok {
-				return nil, fmt.Errorf("failed to get password from secret %s/%s", secretNamespace, httpCredentials.Name)
-			}
-			httpCredentials.Username = string(username)
-			httpCredentials.Password = string(password)
-		case "token":
-			token, ok := secret.Data["token"]
-			if !ok {
-				return nil, fmt.Errorf("failed to get token from secret %s/%s", secretNamespace, httpCredentials.Name)
-			}
-			httpCredentials.Token = string(token)
+	case "basic-auth":
+		username, ok := secret.Data["username"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get username from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		password, ok := secret.Data["password"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get password from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		httpCredentials.Username = string(username)
+		httpCredentials.Password = string(password)
+	case "token":
+		token, ok := secret.Data["token"]
+		if !ok {
+			return nil, fmt.Errorf("failed to get token from secret %s/%s", secretNamespace, httpCredentials.Name)
+		}
+		httpCredentials.Token = string(token)
 	}
 	return httpCredentials, nil
 }
