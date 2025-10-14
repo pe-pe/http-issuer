@@ -4,6 +4,76 @@ metadata:
   name: http-issuer-test
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  name: ca-demo-api
+  namespace: http-issuer-test
+  labels:
+    app: ca-demo-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  selector:
+    app: ca-demo-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ca-demo-api
+  namespace: http-issuer-test
+  labels:
+    app: ca-demo-api
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ca-demo-api
+  template:
+    metadata:
+      labels:
+        app: ca-demo-api
+        version: v1
+    spec:
+      containers:
+      - name: ca-demo-api
+        image: ghcr.io/pe-pe/ca-demo-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        env:
+        - name: BASIC_USER
+          value: "myuser"
+        - name: BASIC_PASS
+          value: "mypassword"
+        - name: BEARER_TOKEN
+          value: "mysecrettoken"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          periodSeconds: 300
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          periodSeconds: 300
+      restartPolicy: Always
+---
+apiVersion: v1
 kind: Secret
 type: kubernetes.io/basic-auth
 data:
@@ -29,8 +99,10 @@ metadata:
   name: http-issuer-sample
   namespace: http-issuer-test
 spec:
-  url: http://host.containers.internal:8080
+  url: http://ca-demo-api.http-issuer-test.svc.cluster.local
+  healthPath: /
   signPath: /api/request_cert
+  durationField: duration
   basicAuthSecretRef:
     name: http-issuer-secret
 ---
@@ -39,7 +111,8 @@ kind: HttpClusterIssuer
 metadata:
   name: http-cluster-issuer-sample
 spec:
-  url: http://host.containers.internal:8080
+  url: http://ca-demo-api.http-issuer-test.svc.cluster.local
+  healthPath: /
   signPath: /api/request_cert
   basicAuthSecretRef:
     name: http-cluster-issuer-secret
@@ -50,6 +123,9 @@ kind: Certificate
 metadata:
   name: http-issuer-sample-cert
   namespace: http-issuer-test
+  annotations:
+    ca.internal/requester: http-issuer
+    ca.internal/environment: development
 spec:
   secretName: http-issuer-sample-cert-tls
   duration: 1h
@@ -68,6 +144,9 @@ kind: Certificate
 metadata:
   name: http-cluster-issuer-sample-cert
   namespace: http-issuer-test
+  annotations:
+    ca.internal/requester: http-cluster-issuer
+    ca.internal/environment: testing
 spec:
   secretName: http-cluster-issuer-sample-cert-tls
   duration: 1h
