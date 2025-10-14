@@ -17,15 +17,13 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
+	"encoding/json"
 	"fmt"
-	"math/big"
+	"io"
+	"net/http"
+	"strings"
 	"time"
 
 	httpissuerv1alpha1 "http-issuer/api/v1alpha1"
@@ -162,8 +160,35 @@ func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
 		return err
 	}
 
-	ctrl.LoggerFrom(ctx).Info("Health check completed for issuer", "spec", spec, "httpCredentials", httpCredentials)
+	// Create HTTP client and make authenticated request with defined timeout
+	client := &http.Client{
+		Timeout: time.Duration(spec.HttpTimeout) * time.Second,
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", spec.URL+spec.HealthPath, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	switch httpCredentials.Type {
+	case "basic-auth":
+		req.SetBasicAuth(httpCredentials.Username, httpCredentials.Password)
+	case "token":
+		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.HealthPath, err)
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close response body: %w", err)
+	}
 
+	// Check if the response status code is 200 OK
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("health check failed, expected status %d OK, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	ctrl.LoggerFrom(ctx).Info("Health check completed for issuer")
 	return nil
 }
 
@@ -178,47 +203,68 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 	if err != nil {
 		return signer.PEMBundle{}, err
 	}
-
-	ctrl.LoggerFrom(ctx).Info("Sign data obtained", "spec", spec, "httpCredentials", httpCredentials)
-
-	// generate random ca private key
-	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
-	if err != nil {
-		return signer.PEMBundle{}, err
-	}
-
-	caCRT := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{"Acme Co"},
-		},
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Hour * 24 * 180),
-
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-
-	// load client certificate request
 	certDetails, err := cr.GetCertificateDetails()
 	if err != nil {
 		return signer.PEMBundle{}, err
 	}
+	requestAnnotations := cr.GetAnnotations()
 
-	clientCRTTemplate, err := certDetails.CertificateTemplate()
+	// Prepare request body with annotations, CSR and Duration
+	data := make(map[string]interface{})
+	groupPrefix := issuerObject.GetObjectKind().GroupVersionKind().Group + "/"
+	for key, value := range requestAnnotations {
+		// match annotations containing groupPrefix and strip it from the key
+		if strings.HasPrefix(key, groupPrefix) {
+			data[strings.TrimPrefix(key, groupPrefix)] = value
+		}
+	}
+	data[spec.CSRField] = string(certDetails.CSR)
+	if spec.DurationField != nil && certDetails.Duration != 0 {
+		data[*spec.DurationField] = int(certDetails.Duration.Minutes())
+	}
+	requestBody, err := json.Marshal(data)
 	if err != nil {
 		return signer.PEMBundle{}, err
 	}
 
-	// create client certificate from template and CA public key
-	clientCRTRaw, err := x509.CreateCertificate(rand.Reader, clientCRTTemplate, caCRT, clientCRTTemplate.PublicKey, caPrivateKey)
+	// Create HTTP client and make authenticated request with defined timeout
+	client := &http.Client{
+		Timeout: time.Duration(spec.HttpTimeout) * time.Second,
+	}
+	req, err := http.NewRequestWithContext(ctx, spec.SignMethod, spec.URL+spec.SignPath, bytes.NewReader(requestBody))
 	if err != nil {
-		panic(err)
+		return signer.PEMBundle{}, fmt.Errorf("failed to create request: %w", err)
+	}
+	switch httpCredentials.Type {
+	case "basic-auth":
+		req.SetBasicAuth(httpCredentials.Username, httpCredentials.Password)
+	case "token":
+		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return signer.PEMBundle{}, fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.SignPath, err)
 	}
 
-	clientCrt := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: clientCRTRaw})
+	// Check if the response status code is 200 OK
+	if resp.StatusCode != http.StatusOK {
+		return signer.PEMBundle{}, fmt.Errorf("sign failed, expected status %d OK, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	// Read the response body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return signer.PEMBundle{}, fmt.Errorf("failed to read response body: %w", err)
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return signer.PEMBundle{}, fmt.Errorf("failed to close response body: %w", err)
+	}
+
+	ctrl.LoggerFrom(ctx).Info("Sign data obtained", "body", string(bodyBytes))
+
 	return signer.PEMBundle{
-		ChainPEM: clientCrt,
+		ChainPEM: bodyBytes,
 	}, nil
 }
