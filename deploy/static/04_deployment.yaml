@@ -22,8 +22,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - image: localhost/http-issuer-controller:v0.0.1
-        imagePullPolicy: Never
+      - image: ghcr.io/pe-pe/http-issuer:latest
+        imagePullPolicy: Always
         name: http-issuer-controller
         securityContext:
           allowPrivilegeEscalation: false
