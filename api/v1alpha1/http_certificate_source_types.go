@@ -39,7 +39,7 @@ type HttpCertificateSource struct {
 	DurationField *string `json:"durationField,omitempty"`
 	// HttpTimeout is the timeout for HTTP requests in seconds, defaults to "5"
 	// +optional
-	// +kubebuilder:default="5"
+	// +kubebuilder:default="30"
 	HttpTimeout int `json:"httpTimeout"`
 	// Only one of the fields below should be set
 	// Name of the secret holding 'username' and 'password' keys for basic auth
