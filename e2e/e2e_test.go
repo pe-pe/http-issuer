@@ -80,10 +80,34 @@ func TestHttpCertificate(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// Create a secret with basic auth credentials
+	authSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "http-issuer-auth",
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("password"),
+		},
+	}
+	err = kubeClient.Create(t.Context(), authSecret)
+	require.NoError(t, err)
+
 	issuer := &httpissuerv1alpha1.HttpIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "issuer-test",
 			Namespace: namespace,
+		},
+		Spec: httpissuerv1alpha1.HttpCertificateSource{
+			URL:         "http://ca.cert-manager.svc.cluster.local",
+			SignPath:    "/api/request_cert",
+			SignMethod:  "POST",
+			CSRField:    "CSR",
+			HttpTimeout: 5,
+			BasicAuthSecretRef: &httpissuerv1alpha1.SecretSelector{
+				Name: authSecret.Name,
+			},
 		},
 	}
 
@@ -124,9 +148,35 @@ func TestHttpCertificateSigningRequest(t *testing.T) {
 
 	csrName := "test-" + rand.String(20)
 
+	// Create a secret in cert-manager namespace for cluster issuer auth
+	secretNamespace := "cert-manager"
+	authSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "http-cluster-issuer-auth-" + csrName,
+			Namespace: secretNamespace,
+		},
+		Data: map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("password"),
+		},
+	}
+	err := kubeClient.Create(t.Context(), authSecret)
+	require.NoError(t, err)
+
 	clusterIssuer := &httpissuerv1alpha1.HttpClusterIssuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-issuer-" + csrName,
+		},
+		Spec: httpissuerv1alpha1.HttpCertificateSource{
+			URL:         "http://ca.cert-manager.svc.cluster.local",
+			SignPath:    "/api/request_cert",
+			SignMethod:  "POST",
+			CSRField:    "CSR",
+			HttpTimeout: 5,
+			BasicAuthSecretRef: &httpissuerv1alpha1.SecretSelector{
+				Name:      authSecret.Name,
+				Namespace: &secretNamespace,
+			},
 		},
 	}
 
