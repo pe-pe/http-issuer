@@ -70,6 +70,8 @@ jobs:
 
       - name: Code scan (securego/gosec)
         uses: securego/gosec@v2.18.2
+        with:
+          args: ./...
 
   docker-build:
     runs-on: ubuntu-latest
@@ -122,7 +124,7 @@ jobs:
     - name: Set up Kind (helm/kind-action)
       uses: helm/kind-action@v1.10.0
       with:
-        cluster-name: api-test
+        cluster_name: api-test
 
     - name: Setup Kind cluster for API E2E tests
       run: |
