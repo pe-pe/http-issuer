@@ -121,10 +121,11 @@ jobs:
 
     - name: Set up Kind (helm/kind-action)
       uses: helm/kind-action@v1.10.0
+      with:
+        cluster-name: api-test
 
     - name: Setup Kind cluster for API E2E tests
       run: |
-        kind create cluster --name api-test
         echo "Deploying cert-manager to Kind cluster ..."
         kubectl --cluster kind-api-test apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml
         echo "Deploying http-issuer to Kind cluster ..."
@@ -146,6 +147,8 @@ jobs:
         kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Ready pod/ca-demo-api --timeout=300s
 
     - name: Run API E2E Tests
+      env:
+        KUBECONFIG: ~/.kube/config
       run: |
         go test -tags=e2e ./e2e/ -v
 
