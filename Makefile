@@ -78,24 +78,24 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 			echo "Deploying cert-manager to Kind cluster '$(KIND_CLUSTER)'..."; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml ; \
 			echo "Deploying http-issuer to Kind cluster '$(KIND_CLUSTER)'..."; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f deploy/crds ; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f deploy/rbac ; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -k deploy/static ; \
 			${CONTAINER_TOOL} save -o _temporary_docker_image.tar ${IMG} ; \
 			$(KIND) load image-archive _temporary_docker_image.tar --name $(KIND_CLUSTER) ; \
 			rm -f _temporary_docker_image.tar ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f deploy/crds ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f deploy/rbac ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -k deploy/static ; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) patch deployment http-issuer-controller -n cert-manager --type='merge' -p='{"spec":{"template":{"spec":{"containers":[{"name":"http-issuer-controller","image":"localhost/${IMG}","imagePullPolicy":"Never"}]}}}}' ; \
 			echo "Waiting for cert-manager to be ready..."; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager --timeout=120s ; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager-webhook --timeout=120s ; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager-cainjector --timeout=120s ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager --timeout=300s ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager-webhook --timeout=300s ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager-cainjector --timeout=300s ; \
 			echo "Waiting for http-issuer-controller to be ready..."; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/http-issuer-controller --timeout=120s ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/http-issuer-controller --timeout=300s ; \
 			echo "Deploying ca-demo-api to serve test certificates..."; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager run ca-demo-api --image=ghcr.io/pe-pe/ca-demo-api:latest --port=5000 ; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager expose pod ca-demo-api --name ca --port=80 --target-port=5000 ; \
 			echo "Waiting for ca-demo-api to be ready..."; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Ready pod/ca-demo-api --timeout=120s ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Ready pod/ca-demo-api --timeout=300s ; \
 			;; \
 	esac
 

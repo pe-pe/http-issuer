@@ -1,0 +1,196 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (actions/checkout)
+        uses: actions/checkout@v5
+
+      - name: Setup Go (actions/setup-go)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Lint (golangci/golangci-lint-action)
+        uses: golangci/golangci-lint-action@v8
+
+      - name: Lint using standard configuration
+        run: |
+          golangci-lint run --timeout 5m
+
+      - name: Format using gofmt,goimports
+        run: |
+          golangci-lint fmt -d -E gofmt,goimports
+
+  unit-test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout (actions/checkout)
+        uses: actions/checkout@v5
+
+      - name: Setup Go (actions/setup-go)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test $(go list ./... | grep -v /e2e) -cover
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout (actions/checkout)
+        uses: actions/checkout@v5
+
+      - name: Setup Go (actions/setup-go)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Suspicious constructs scan with vet
+        run: go vet ./...
+
+      - name: Vulnerabilities scan (golang/govulncheck-action)
+        uses: golang/govulncheck-action@v1
+
+      - name: Code scan (securego/gosec)
+        uses: securego/gosec@v2.18.2
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [unit-test, security-scan]
+    permissions:
+      contents: read
+      actions: write  # For Docker build cache
+    steps:
+    - name: Checkout (actions/checkout)
+      uses: actions/checkout@v5
+
+    - name: Set up Docker Buildx (docker/setup-buildx-action)
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image (docker/build-push-action)
+      uses: docker/build-push-action@v6
+      with:
+        load: true
+        tags: http-issuer:build
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        outputs: type=docker,dest=${{ runner.temp }}/http-issuer.tar
+
+    - name: Cache Docker Image (actions/upload-artifact)
+      uses: actions/upload-artifact@v4
+      with:
+        # used build job hash as name to avoid overwriting previous builds
+        name: http-issuer-${{ github.sha }}
+        path: ${{ runner.temp }}/http-issuer.tar
+
+  api-test:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    permissions:
+      contents: read
+      actions: write  # For Docker build cache
+    steps:
+    - name: Checkout (actions/checkout)
+      uses: actions/checkout@v5
+
+    - name: Set up Docker Buildx (docker/setup-buildx-action)
+      uses: docker/setup-buildx-action@v3
+
+    - name: Download Cached Docker Image (actions/download-artifact)
+      uses: actions/download-artifact@v4
+      with:
+        name: http-issuer-${{ github.sha }}
+        path: ${{ runner.temp }}
+
+    - name: Set up Kind (helm/kind-action)
+      uses: helm/kind-action@v1.10.0
+
+    - name: Setup Kind cluster for API E2E tests
+      run: |
+        kind create cluster --name api-test
+        echo "Deploying cert-manager to Kind cluster ..."
+        kubectl --cluster kind-api-test apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml
+        echo "Deploying http-issuer to Kind cluster ..."
+        kind load image-archive ${{ runner.temp }}/http-issuer.tar --name api-test
+        kubectl --cluster kind-api-test apply -f deploy/crds
+        kubectl --cluster kind-api-test apply -f deploy/rbac
+        kubectl --cluster kind-api-test apply -k deploy/static
+        kubectl --cluster kind-api-test patch deployment http-issuer-controller -n cert-manager --type='merge' -p='{"spec":{"template":{"spec":{"containers":[{"name":"http-issuer-controller","image":"http-issuer:build","imagePullPolicy":"Never"}]}}}}'
+        echo "Waiting for cert-manager to be ready..."
+        kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/cert-manager --timeout=300s
+        kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/cert-manager-webhook --timeout=300s
+        kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/cert-manager-cainjector --timeout=300s
+        echo "Waiting for http-issuer-controller to be ready..."
+        kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/http-issuer-controller --timeout=300s
+        echo "Deploying ca-demo-api to serve test certificates..."
+        kubectl --cluster kind-api-test -n cert-manager run ca-demo-api --image=ghcr.io/pe-pe/ca-demo-api:latest --port=5000
+        kubectl --cluster kind-api-test -n cert-manager expose pod ca-demo-api --name ca --port=80 --target-port=5000
+        echo "Waiting for ca-demo-api to be ready..."
+        kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Ready pod/ca-demo-api --timeout=300s
+
+    - name: Run API E2E Tests
+      run: |
+        go test -tags=e2e ./e2e/ -v
+
+  # Deploy (only on push to main or develop)
+  deploy-ghcrio:
+    runs-on: ubuntu-latest
+    needs: api-test
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+      actions: write  # For Docker build cache
+
+    steps:
+    - name: Checkout (actions/checkout)
+      uses: actions/checkout@v5
+
+    - name: Set up Docker Buildx (docker/setup-buildx-action)
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry (docker/login-action)
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (docker/metadata-action)
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value={{date 'YYYYMMDD-hhmmss' tz='CET'}}
+          type=ref,event=branch
+          type=ref,event=pr
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image (docker/build-push-action)
+      uses: docker/build-push-action@v6
+      with:
+        push: true
+        platforms: linux/amd64
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        provenance: false
