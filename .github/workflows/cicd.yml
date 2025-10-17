@@ -149,9 +149,9 @@ jobs:
         kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Ready pod/ca-demo-api --timeout=300s
 
     - name: Run API E2E Tests
-      env:
-        KUBECONFIG: ~/.kube/config
       run: |
+        export KUBECONFIG=${{ runner.temp }}/kind-kubeconfig.yaml
+        kind get kubeconfig > ${KUBECONFIG}
         go test -tags=e2e ./e2e/ -v
 
   # Deploy (only on push to main or develop)
