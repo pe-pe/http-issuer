@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "deps-golang"
+      prefix: "golang"
       include: "scope"
     labels:
       - "dependencies"
@@ -17,7 +17,7 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "deps-docker"
+      prefix: "docker"
       include: "scope"
     labels:
       - "dependencies"
