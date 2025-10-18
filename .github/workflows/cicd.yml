@@ -67,6 +67,8 @@ jobs:
 
       - name: Vulnerabilities scan (golang/govulncheck-action)
         uses: golang/govulncheck-action@v1
+        with:
+          cache: false
 
       - name: Code scan (securego/gosec)
         uses: securego/gosec@v2.22.10
@@ -129,7 +131,8 @@ jobs:
     - name: Setup Kind cluster for API E2E tests
       run: |
         echo "Deploying cert-manager to Kind cluster ..."
-        kubectl --cluster kind-api-test apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml
+        # Extract cert-manager version from go.mod
+        kubectl --cluster kind-api-test apply -f https://github.com/cert-manager/cert-manager/releases/download/$(awk '/github.com.cert-manager.cert-manager/ { print $2 }' go.mod)/cert-manager.yaml
         echo "Deploying http-issuer to Kind cluster ..."
         kind load image-archive ${{ runner.temp }}/http-issuer.tar --name api-test
         kubectl --cluster kind-api-test apply -f deploy/crds
@@ -142,7 +145,7 @@ jobs:
         kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/cert-manager-cainjector --timeout=300s
         echo "Waiting for http-issuer-controller to be ready..."
         kubectl --cluster kind-api-test -n cert-manager wait --for=condition=Available=True deployment/http-issuer-controller --timeout=300s
-        echo "Deploying ca-demo-api to serve test certificates..."
+        echo "Deploying ca-demo-api (latest) to serve test certificates..."
         kubectl --cluster kind-api-test -n cert-manager run ca-demo-api --image=ghcr.io/pe-pe/ca-demo-api:latest --port=5000
         kubectl --cluster kind-api-test -n cert-manager expose pod ca-demo-api --name ca --port=80 --target-port=5000
         echo "Waiting for ca-demo-api to be ready..."
@@ -158,7 +161,7 @@ jobs:
   deploy-ghcrio:
     runs-on: ubuntu-latest
     needs: api-test
-    if: github.event_name == 'push'
+    if: ${{ github.event_name == 'push' }}
     permissions:
       contents: read
       packages: write
@@ -184,13 +187,13 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=raw,value={{date 'YYYYMMDD-hhmmss' tz='CET'}}
+          type=raw,value={{date 'YYYYMMDDhhmmss' tz='UTC'}}
           type=ref,event=branch
           type=ref,event=pr
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image (docker/build-push-action)
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v5
       with:
         push: true
         platforms: linux/amd64

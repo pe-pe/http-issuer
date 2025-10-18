@@ -1,4 +1,4 @@
-name: Merge Dependabot PRs
+name: Dependabot Auto-Approve PR
 
 on:
   pull_request_target:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  auto-merge:
+  auto-approve:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     env:
@@ -41,8 +41,3 @@ jobs:
         if: success()
         run: |
           gh pr review "${{ github.event.pull_request.number }}" --approve
-
-      - name: Merge Dependabot PR
-        if: success()
-        run: |
-          gh pr merge --auto --squash "${{ github.event.pull_request.number }}"

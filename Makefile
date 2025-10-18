@@ -76,7 +76,7 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 			echo "Creating Kind cluster '$(KIND_CLUSTER)'..."; \
 			$(KIND) create cluster --name $(KIND_CLUSTER) ; \
 			echo "Deploying cert-manager to Kind cluster '$(KIND_CLUSTER)'..."; \
-			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.19.1/cert-manager.yaml ; \
+			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) apply -f https://github.com/cert-manager/cert-manager/releases/download/$$(awk '/github.com.cert-manager.cert-manager/ { print $$2 }' go.mod)/cert-manager.yaml ; \
 			echo "Deploying http-issuer to Kind cluster '$(KIND_CLUSTER)'..."; \
 			${CONTAINER_TOOL} save -o _temporary_docker_image.tar ${IMG} ; \
 			$(KIND) load image-archive _temporary_docker_image.tar --name $(KIND_CLUSTER) ; \
@@ -91,7 +91,7 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/cert-manager-cainjector --timeout=300s ; \
 			echo "Waiting for http-issuer-controller to be ready..."; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager wait --for=condition=Available=True deployment/http-issuer-controller --timeout=300s ; \
-			echo "Deploying ca-demo-api to serve test certificates..."; \
+			echo "Deploying ca-demo-api (latest) to serve test certificates..."; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager run ca-demo-api --image=ghcr.io/pe-pe/ca-demo-api:latest --port=5000 ; \
 			$(KUBECTL) --cluster kind-$(KIND_CLUSTER) -n cert-manager expose pod ca-demo-api --name ca --port=80 --target-port=5000 ; \
 			echo "Waiting for ca-demo-api to be ready..."; \
