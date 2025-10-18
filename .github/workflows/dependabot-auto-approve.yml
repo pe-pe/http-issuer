@@ -22,7 +22,7 @@ jobs:
         run: |
           # Wait 30 minutes for checks completion before checking their final status
           for i in $(seq 1 60); do
-            gh pr checks "${{ github.event.pull_request.number }}" --json name,state --jq '.[] | select(.name != "auto-merge") | join(" => ")' > checks_status.txt
+            gh pr checks "${{ github.event.pull_request.number }}" --json name,state --jq '.[] | select(.name != "auto-approve") | join(" => ")' > checks_status.txt
             if [ ! -s checks_status.txt ] || grep -q "IN_PROGRESS\|QUEUED" checks_status.txt; then
               echo "Some checks are still in progress. Waiting... (loop $i)"
               sleep 30
