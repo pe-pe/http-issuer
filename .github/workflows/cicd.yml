@@ -71,7 +71,7 @@ jobs:
           cache: false
 
       - name: Code scan (securego/gosec)
-        uses: securego/gosec@v2.22.10
+        uses: securego/gosec@v2.22.11
         with:
           args: ./...
 
