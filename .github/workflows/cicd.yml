@@ -98,7 +98,7 @@ jobs:
         outputs: type=docker,dest=${{ runner.temp }}/http-issuer.tar
 
     - name: Cache Docker Image (actions/upload-artifact)
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         # used build job hash as name to avoid overwriting previous builds
         name: http-issuer-${{ github.sha }}
