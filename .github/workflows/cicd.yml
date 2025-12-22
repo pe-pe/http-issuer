@@ -71,10 +71,11 @@ jobs:
       - name: Vulnerabilities scan with govulncheck
         run: govulncheck -C . -format text ./...
 
-      - name: Code scan (securego/gosec)
-        uses: securego/gosec@v2.22.11
-        with:
-          args: ./...
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Code scan with securego/gosec
+        run: gosec ./...
 
   docker-build:
     runs-on: ubuntu-latest
