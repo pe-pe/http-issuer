@@ -78,7 +78,9 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 
 		Sign:          s.Sign,
 		Check:         s.Check,
-		EventRecorder: mgr.GetEventRecorder("httpissuer.ca.internal"),
+		// 1. Use the deprecated method (returns record.EventRecorder)
+                // 2. Add the nolint directive to silence the linter
+                EventRecorder: mgr.GetEventRecorderFor("httpissuer.ca.internal"), //nolint:staticcheck
 	}).SetupWithManager(ctx, mgr)
 }
 
