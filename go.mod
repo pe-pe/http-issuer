@@ -1,9 +1,9 @@
 module http-issuer
 
-go 1.25.5
+go 1.25.7
 
 require (
-	github.com/cert-manager/cert-manager v1.19.2
+	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cert-manager/issuer-lib v0.9.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
