@@ -78,7 +78,7 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 
 		Sign:          s.Sign,
 		Check:         s.Check,
-		EventRecorder: mgr.GetEventRecorderFor("httpissuer.ca.internal"),
+		EventRecorder: mgr.GetEventRecorder("httpissuer.ca.internal"),
 	}).SetupWithManager(ctx, mgr)
 }
 
