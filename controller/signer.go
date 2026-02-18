@@ -64,7 +64,7 @@ type HttpCredentials struct {
 	Type     string
 	Name     string
 	Username string
-	Password string
+	Password string // #nosec G117 -- this is a variable name, not a hardcoded secret
 	Token    string
 }
 
@@ -121,6 +121,7 @@ func (s Signer) Check(ctx context.Context, issuerObject v1alpha1.Issuer) error {
 	case AuthTypeToken:
 		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
 	}
+	// #nosec G704 -- URL is provided as specification
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.HealthPath, err)
@@ -190,6 +191,7 @@ func (s Signer) Sign(ctx context.Context, cr signer.CertificateRequestObject, is
 		req.Header.Set("Authorization", "Bearer "+httpCredentials.Token)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	// #nosec G704 -- URL is provided as specification
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return signer.PEMBundle{}, fmt.Errorf("failed to connect to %s: %w", spec.URL+spec.SignPath, err)
