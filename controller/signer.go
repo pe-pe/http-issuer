@@ -77,8 +77,8 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 		FieldOwner:       "httpissuer.ca.internal",
 		MaxRetryDuration: 1 * time.Minute,
 
-		Sign:  s.Sign,
-		Check: s.Check,
+		Sign:          s.Sign,
+		Check:         s.Check,
 		EventRecorder: mgr.GetEventRecorder("httpissuer.ca.internal"),
 	}).SetupWithManager(ctx, mgr)
 }
