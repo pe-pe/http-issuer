@@ -54,7 +54,8 @@ const (
 // +kubebuilder:rbac:groups=ca.internal,resources=httpissuers/status;httpclusterissuers/status,verbs=patch
 
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=list;watch
-// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch;update
 
 type Signer struct {
 	KubeClient client.Client
@@ -78,9 +79,7 @@ func (s Signer) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 
 		Sign:  s.Sign,
 		Check: s.Check,
-		// 1. Use the deprecated method (returns record.EventRecorder)
-		// 2. Add the nolint directive to silence the linter
-		EventRecorder: mgr.GetEventRecorderFor("httpissuer.ca.internal"), //nolint:staticcheck
+		EventRecorder: mgr.GetEventRecorder("httpissuer.ca.internal"),
 	}).SetupWithManager(ctx, mgr)
 }
 
