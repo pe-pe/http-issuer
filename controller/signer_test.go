@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cert-manager/issuer-lib/api/v1alpha1"
 	"github.com/cert-manager/issuer-lib/controllers/signer"
 )
@@ -630,10 +629,10 @@ func (m *mockCertificateRequest) GetAnnotations() map[string]string {
 	return m.annotations
 }
 
-func (m *mockCertificateRequest) GetConditions() []cmapi.CertificateRequestCondition { return nil }
-func (m *mockCertificateRequest) SetCertificate(_ []byte) error                      { return nil }
-func (m *mockCertificateRequest) SetCA(_ []byte) error                               { return nil }
-func (m *mockCertificateRequest) SetFailed(_ string, _ string) error                 { return nil }
+func (m *mockCertificateRequest) GetConditions() []metav1.Condition  { return nil }
+func (m *mockCertificateRequest) SetCertificate(_ []byte) error      { return nil }
+func (m *mockCertificateRequest) SetCA(_ []byte) error               { return nil }
+func (m *mockCertificateRequest) SetFailed(_ string, _ string) error { return nil }
 
 // Implement metav1.Object interface
 func (m *mockCertificateRequest) GetName() string                                { return "test-cr" }
