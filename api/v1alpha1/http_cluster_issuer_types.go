@@ -65,8 +65,8 @@ type HttpClusterIssuerList struct {
 
 func init() {
 	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
-		scheme.AddKnownTypes(GroupVersion, &HttpClusterIssuer{}, &HttpClusterIssuerList{})
-		metav1.AddToGroupVersion(scheme, GroupVersion)
+		scheme.AddKnownTypes(SchemeGroupVersion, &HttpClusterIssuer{}, &HttpClusterIssuerList{})
+		metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 		return nil
 	})
 }
