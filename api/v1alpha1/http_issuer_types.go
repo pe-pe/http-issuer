@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/cert-manager/issuer-lib/api/v1alpha1"
 )
@@ -62,5 +63,9 @@ type HttpIssuerList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&HttpIssuer{}, &HttpIssuerList{})
+	SchemeBuilder.Register(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(GroupVersion, &HttpIssuer{}, &HttpIssuerList{})
+		metav1.AddToGroupVersion(scheme, GroupVersion)
+		return nil
+	})
 }
