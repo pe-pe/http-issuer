@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	github.com/cert-manager/cert-manager v1.21.2
-	github.com/cert-manager/issuer-lib v0.12.0
+	github.com/cert-manager/issuer-lib v0.12.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
 	k8s.io/api v0.37.1
