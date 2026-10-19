@@ -1,6 +1,6 @@
 module http-issuer
 
-go 1.26.6
+go 1.26.9
 
 require (
 	github.com/cert-manager/cert-manager v1.21.2
